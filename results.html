@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📊 太空冒險 — 成績紀錄（老師專用）</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Noto Sans TC', 'Microsoft YaHei', sans-serif; background: #0d1030; color: #e8ecff; padding: 20px; }
+h1 { color: #ffd700; font-size: 1.6em; margin-bottom: 4px; }
+.sub { color: #8899cc; font-size: 0.9em; margin-bottom: 18px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+select, button, input {
+  font-family: inherit; font-size: 0.95em; padding: 8px 14px; border-radius: 8px;
+  border: 2px solid #3a4a7a; background: #1a1f44; color: #fff; cursor: pointer;
+}
+button { background: #0066ff; border-color: #0044aa; font-weight: 700; }
+button:hover { background: #0077ff; }
+button.csv { background: #00aa66; border-color: #008850; }
+button.csv:hover { background: #00bb77; }
+.stat-cards { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
+.card { background: #1a1f44; border: 1px solid #2a3a6a; border-radius: 12px; padding: 12px 18px; min-width: 120px; }
+.card .num { font-size: 1.8em; font-weight: 900; color: #ffd700; }
+.card .lbl { font-size: 0.8em; color: #8899cc; }
+table { width: 100%; border-collapse: collapse; background: #141838; border-radius: 12px; overflow: hidden; }
+th, td { padding: 10px 12px; text-align: left; font-size: 0.9em; border-bottom: 1px solid #232a55; }
+th { background: #1f2550; color: #99bbff; cursor: pointer; user-select: none; white-space: nowrap; }
+th:hover { background: #2a3266; }
+tr:hover td { background: #1a1f44; }
+.win { color: #00ff99; font-weight: 700; }
+.lose { color: #ff8888; }
+.msg { padding: 30px; text-align: center; color: #8899cc; }
+.rank { color: #ffd700; font-weight: 900; }
+@media (max-width: 600px) { td, th { padding: 7px 6px; font-size: 0.8em; } }
+</style>
+</head>
+<body>
+
+<h1>📊 太空冒險 — 成績紀錄</h1>
+<div class="sub">老師專用 · 即時讀取學生遊戲成績</div>
+
+<div class="stat-cards" id="statCards"></div>
+
+<div class="toolbar">
+  <label>班別：
+    <select id="classFilter" onchange="render()">
+      <option value="">全部</option>
+    </select>
+  </label>
+  <label>排序：
+    <select id="sortBy" onchange="render()">
+      <option value="createdAt">最新優先</option>
+      <option value="score">分數（高→低）</option>
+      <option value="correct">答對題數</option>
+      <option value="name">名字</option>
+    </select>
+  </label>
+  <button onclick="loadData()">🔄 重新整理</button>
+  <button class="csv" onclick="exportCSV()">⬇️ 匯出 CSV（Excel）</button>
+</div>
+
+<div id="tableWrap"><div class="msg">載入中…</div></div>
+
+<!-- ====== FIREBASE SDK ====== -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  ⚙️ 同遊戲檔案用「一模一樣」嘅 Firebase config，貼喺呢度        ║
+// ╚══════════════════════════════════════════════════════════════╝
+const firebaseConfig = {
+  apiKey: "貼上你嘅_API_KEY",
+  authDomain: "你嘅專案.firebaseapp.com",
+  projectId: "你嘅專案ID",
+  storageBucket: "你嘅專案.appspot.com",
+  messagingSenderId: "貼上你嘅",
+  appId: "貼上你嘅"
+};
+
+let db = null;
+let allRows = [];
+
+if (!firebaseConfig.projectId.startsWith('你嘅')) {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+}
+
+function loadData() {
+  if (!db) {
+    document.getElementById('tableWrap').innerHTML =
+      '<div class="msg">⚙️ 仲未設定 Firebase。<br>請跟「Firebase設定說明」貼入 config，先會見到成績。</div>';
+    return;
+  }
+  document.getElementById('tableWrap').innerHTML = '<div class="msg">載入中…</div>';
+  db.collection('scores').orderBy('createdAt', 'desc').get()
+    .then(snap => {
+      allRows = [];
+      snap.forEach(doc => {
+        const d = doc.data();
+        d._id = doc.id;
+        d._time = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate() : null;
+        allRows.push(d);
+      });
+      buildClassFilter();
+      render();
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById('tableWrap').innerHTML =
+        '<div class="msg">⚠️ 讀取失敗：' + err.message + '<br>請檢查 Firebase config 同 Firestore 規則。</div>';
+    });
+}
+
+function buildClassFilter() {
+  const sel = document.getElementById('classFilter');
+  const current = sel.value;
+  const classes = [...new Set(allRows.map(r => r.class).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">全部</option>' +
+    classes.map(c => `<option value="${c}">${c}</option>`).join('');
+  sel.value = current;
+}
+
+function fmtTime(t) {
+  if (!t) return '—';
+  const p = n => String(n).padStart(2, '0');
+  return `${t.getFullYear()}-${p(t.getMonth()+1)}-${p(t.getDate())} ${p(t.getHours())}:${p(t.getMinutes())}`;
+}
+
+function getRows() {
+  const cls = document.getElementById('classFilter').value;
+  const sortBy = document.getElementById('sortBy').value;
+  let rows = allRows.filter(r => !cls || r.class === cls);
+  rows.sort((a, b) => {
+    if (sortBy === 'name') return (a.name || '').localeCompare(b.name || '');
+    if (sortBy === 'createdAt') return (b._time || 0) - (a._time || 0);
+    return (b[sortBy] || 0) - (a[sortBy] || 0);
+  });
+  return rows;
+}
+
+function render() {
+  const rows = getRows();
+  renderStats(rows);
+
+  if (rows.length === 0) {
+    document.getElementById('tableWrap').innerHTML = '<div class="msg">未有成績紀錄。</div>';
+    return;
+  }
+
+  let html = `<table><thead><tr>
+    <th>#</th><th>班別</th><th>學號</th>
+    <th>分數</th><th>答對</th><th>答錯</th><th>最高連擊</th>
+    <th>結果</th><th>到達</th><th>時間</th>
+  </tr></thead><tbody>`;
+
+  rows.forEach((r, i) => {
+    html += `<tr>
+      <td class="rank">${i + 1}</td>
+      <td>${esc(r.class)}</td>
+      <td>${esc(r.num)} 號</td>
+      <td><b>${r.score ?? 0}</b></td>
+      <td>${r.correct ?? 0}</td>
+      <td>${r.wrong ?? 0}</td>
+      <td>${r.maxCombo ?? 0}</td>
+      <td class="${r.result === 'win' ? 'win' : 'lose'}">${r.result === 'win' ? '🏆 成功' : '💥 失敗'}</td>
+      <td>${esc(r.reached)}</td>
+      <td>${fmtTime(r._time)}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('tableWrap').innerHTML = html;
+}
+
+function renderStats(rows) {
+  const total = rows.length;
+  const wins = rows.filter(r => r.result === 'win').length;
+  const avg = total ? Math.round(rows.reduce((s, r) => s + (r.score || 0), 0) / total) : 0;
+  const best = total ? Math.max(...rows.map(r => r.score || 0)) : 0;
+  document.getElementById('statCards').innerHTML = `
+    <div class="card"><div class="num">${total}</div><div class="lbl">遊戲次數</div></div>
+    <div class="card"><div class="num">${wins}</div><div class="lbl">通關次數</div></div>
+    <div class="card"><div class="num">${avg}</div><div class="lbl">平均分</div></div>
+    <div class="card"><div class="num">${best}</div><div class="lbl">最高分</div></div>
+  `;
+}
+
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+function exportCSV() {
+  const rows = getRows();
+  const header = ['班別','學號','分數','答對','答錯','最高連擊','結果','到達星球','時間'];
+  const lines = [header.join(',')];
+  rows.forEach(r => {
+    const cells = [
+      r.class, r.num, r.score ?? 0, r.correct ?? 0, r.wrong ?? 0,
+      r.maxCombo ?? 0, r.result === 'win' ? '成功' : '失敗', r.reached, fmtTime(r._time)
+    ].map(v => `"${String(v ?? '').replace(/"/g, '""')}"`);
+    lines.push(cells.join(','));
+  });
+  // 加 BOM 令 Excel 正確顯示中文
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `太空冒險成績_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+loadData();
+</script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚀 P4 科學科 — 太空冒險</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Noto Sans TC', 'Microsoft YaHei', sans-serif;
+  background: radial-gradient(circle at 50% 0%, #14143d 0%, #0a0a26 60%, #05050f 100%);
+  min-height: 100vh; color: #fff; display: flex; align-items: center; justify-content: center;
+  text-align: center; padding: 24px; overflow: hidden;
+}
+.stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.star { position: absolute; border-radius: 50%; background: #fff; animation: tw var(--d) ease-in-out infinite alternate; }
+@keyframes tw { 0%{opacity:.2} 100%{opacity:1} }
+.box { position: relative; z-index: 1; max-width: 460px; width: 100%; }
+.rocket { font-size: 86px; display: block; animation: hover 2.4s ease-in-out infinite; }
+@keyframes hover { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-16px)} }
+h1 { font-size: 2.6em; color: #ffd700; text-shadow: 0 0 36px #ff8c00; margin: 6px 0; }
+.sub { color: #99ccff; margin-bottom: 30px; }
+.btn {
+  display: block; width: 100%; text-decoration: none; color: #fff;
+  background: linear-gradient(180deg, #00ccff, #0066ff); border: 3px solid #0044aa;
+  font-size: 1.4em; font-weight: 900; padding: 18px; border-radius: 50px; margin-bottom: 16px;
+  box-shadow: 0 6px 0 #003388, 0 0 30px rgba(0,102,255,.4); transition: transform .15s;
+}
+.btn:hover { transform: translateY(-2px); }
+.btn.lb { background: linear-gradient(180deg, #ffcd3c, #ff9500); border-color: #cc7a00; box-shadow: 0 6px 0 #b36b00, 0 0 30px rgba(255,180,0,.4); color: #3a2400; }
+.teacher { margin-top: 22px; }
+.teacher a { color: #6677aa; font-size: 0.85em; text-decoration: none; border-bottom: 1px dashed #44558a; }
+.teacher a:hover { color: #99bbff; }
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="box">
+  <span class="rocket">🚀</span>
+  <h1>太空冒險</h1>
+  <p class="sub">四年級科學科 · 考試溫習</p>
+  <a class="btn" href="game.html">🚀 開始遊戲</a>
+  <a class="btn lb" href="leaderboard.html">🏆 排行榜</a>
+  <div class="teacher"><a href="results.html">👩‍🏫 老師專用：成績紀錄</a></div>
+</div>
+<script>
+const c = document.getElementById('stars');
+for (let i=0;i<80;i++){const s=document.createElement('div');s.className='star';const z=1+Math.random()*2.5;s.style.cssText=`width:${z}px;height:${z}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${1.5+Math.random()*3}s;animation-delay:-${Math.random()*3}s`;c.appendChild(s);}
+</script>
+</body>
+</html>

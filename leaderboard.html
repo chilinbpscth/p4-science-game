@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏆 太空冒險 — 直播排行榜</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Noto Sans TC', 'Microsoft YaHei', sans-serif;
+  background: radial-gradient(circle at 50% 0%, #14143d 0%, #0a0a26 60%, #05050f 100%);
+  min-height: 100vh; color: #fff; overflow-x: hidden;
+}
+.stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.star { position: absolute; border-radius: 50%; background: #fff; animation: tw var(--d) ease-in-out infinite alternate; }
+@keyframes tw { 0%{opacity:.2;transform:scale(.7)} 100%{opacity:1;transform:scale(1.2)} }
+
+.wrap { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
+
+header { text-align: center; margin-bottom: 18px; }
+header h1 { font-size: 2.6em; color: #ffd700; text-shadow: 0 0 30px #ff8c00; letter-spacing: 2px; }
+header .sub { color: #99ccff; font-size: 1.05em; margin-top: 4px; }
+
+.controls { display: flex; justify-content: center; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 26px; }
+.controls select {
+  font-family: inherit; font-size: 1.1em; padding: 8px 18px; border-radius: 30px;
+  border: 2px solid #3a4a7a; background: #141838; color: #fff; cursor: pointer;
+}
+.live-dot { display: inline-flex; align-items: center; gap: 7px; color: #00ff99; font-weight: 700; }
+.live-dot .dot { width: 11px; height: 11px; border-radius: 50%; background: #00ff66; box-shadow: 0 0 10px #00ff66; animation: blink 1.4s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+.updated { color: #6677aa; font-size: 0.85em; }
+
+/* === PODIUM === */
+.podium { display: flex; justify-content: center; align-items: flex-end; gap: 16px; margin-bottom: 30px; min-height: 200px; }
+.pod {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+  border: 2px solid rgba(255,255,255,0.15); border-radius: 18px 18px 0 0;
+  padding: 16px 18px 22px; width: 200px; transition: all .4s;
+}
+.pod .medal { font-size: 2.6em; }
+.pod .who { font-size: 1.25em; font-weight: 900; text-align: center; }
+.pod .pts { font-size: 1.5em; font-weight: 900; color: #ffd700; }
+.pod.p1 { order: 2; height: 200px; border-color: #ffd700; box-shadow: 0 0 40px rgba(255,215,0,.4); background: linear-gradient(180deg, rgba(255,215,0,.18), rgba(255,215,0,.03)); }
+.pod.p2 { order: 1; height: 165px; border-color: #c0c8e0; }
+.pod.p3 { order: 3; height: 145px; border-color: #cd7f32; }
+.pod .crown { font-size: 2em; margin-bottom: -6px; }
+
+/* === REST OF LIST === */
+.list { max-width: 680px; margin: 0 auto; }
+.row {
+  display: flex; align-items: center; gap: 14px; padding: 13px 22px; margin-bottom: 8px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(120,160,255,0.18);
+  border-radius: 14px; font-size: 1.2em; transition: all .3s;
+}
+.row .pos { width: 46px; text-align: center; font-weight: 900; color: #ffd700; font-size: 1.05em; }
+.row .who { flex: 1; font-weight: 700; }
+.row .pts { color: #ffd700; font-weight: 900; }
+.row .stat { color: #88aadd; font-size: 0.75em; margin-left: 8px; font-weight: 400; }
+
+.empty { text-align: center; color: #8899cc; font-size: 1.2em; padding: 60px 0; }
+.count { text-align: center; color: #6677aa; font-size: 0.9em; margin-top: 18px; }
+
+@media (max-width: 600px) {
+  header h1 { font-size: 1.8em; }
+  .podium { gap: 8px; }
+  .pod { width: 31%; padding: 10px 6px 14px; }
+  .pod .who { font-size: 0.95em; }
+  .pod .pts { font-size: 1.1em; }
+  .row { font-size: 1em; padding: 11px 14px; }
+}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="wrap">
+  <header>
+    <h1>🏆 太空冒險 排行榜</h1>
+    <div class="sub">四年級科學科 · 邊個係星際指揮官？</div>
+  </header>
+
+  <div class="controls">
+    <select id="classFilter" onchange="render()">
+      <option value="">🌍 全校</option>
+    </select>
+    <span class="live-dot"><span class="dot"></span>即時更新中</span>
+    <span class="updated" id="updated"></span>
+  </div>
+
+  <div class="podium" id="podium"></div>
+  <div class="list" id="list"></div>
+  <div class="count" id="count"></div>
+</div>
+
+<!-- ====== FIREBASE SDK ====== -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  ⚙️ 同遊戲檔案用「一模一樣」嘅 Firebase config，貼喺呢度        ║
+// ╚══════════════════════════════════════════════════════════════╝
+const firebaseConfig = {
+  apiKey: "貼上你嘅_API_KEY",
+  authDomain: "你嘅專案.firebaseapp.com",
+  projectId: "你嘅專案ID",
+  storageBucket: "你嘅專案.appspot.com",
+  messagingSenderId: "貼上你嘅",
+  appId: "貼上你嘅"
+};
+
+let bestList = [];   // 每位學生最高分
+
+// 未設定 Firebase 就顯示友善提示，唔好爆錯誤
+if (firebaseConfig.projectId.startsWith('你嘅')) {
+  document.getElementById('podium').innerHTML = '';
+  document.getElementById('list').innerHTML =
+    '<div class="empty">⚙️ 排行榜未啟用<br><span style="font-size:0.7em;color:#6677aa">老師仲未設定好 Firebase（見「Firebase設定說明」）</span></div>';
+  throw new Error('Firebase 未設定');  // 停止往下行
+}
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// 即時監聽：任何學生玩完，排行榜即刻更新
+db.collection('scores').onSnapshot(snap => {
+  const best = {};
+  snap.forEach(doc => {
+    const d = doc.data();
+    const key = (d.class || '') + '|' + (d.num || '');
+    const t = (d.createdAt && d.createdAt.toDate) ? d.createdAt.toDate().getTime() : 0;
+    if (!best[key] || (d.score || 0) > best[key].score) {
+      best[key] = {
+        key, class: d.class, num: d.num,
+        score: d.score || 0, correct: d.correct || 0, t
+      };
+    }
+  });
+  bestList = Object.values(best).sort((a, b) => b.score - a.score || a.t - b.t);
+  buildClassFilter();
+  render();
+  const now = new Date();
+  const p = n => String(n).padStart(2, '0');
+  document.getElementById('updated').textContent =
+    `更新於 ${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
+}, err => {
+  console.error(err);
+  document.getElementById('list').innerHTML =
+    '<div class="empty">⚠️ 讀取失敗：' + err.message + '<br>請檢查 Firebase 設定同安全規則（allow read 要 true）。</div>';
+});
+
+function buildClassFilter() {
+  const sel = document.getElementById('classFilter');
+  const cur = sel.value;
+  const classes = [...new Set(bestList.map(r => r.class).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">🌍 全校</option>' +
+    classes.map(c => `<option value="${c}">${c} 班</option>`).join('');
+  sel.value = cur;
+}
+
+function render() {
+  const cls = document.getElementById('classFilter').value;
+  const rows = bestList.filter(r => !cls || r.class === cls);
+  const medals = ['🥇', '🥈', '🥉'];
+  const podium = document.getElementById('podium');
+  const list = document.getElementById('list');
+
+  if (rows.length === 0) {
+    podium.innerHTML = '';
+    list.innerHTML = '<div class="empty">🚀 仲未有人玩…快啲開始第一個挑戰！</div>';
+    document.getElementById('count').textContent = '';
+    return;
+  }
+
+  // 頭三名頒獎台
+  const podClass = ['p1', 'p2', 'p3'];
+  const crown = ['👑', '', ''];
+  podium.innerHTML = rows.slice(0, 3).map((e, i) => `
+    <div class="pod ${podClass[i]}">
+      <div class="crown">${crown[i]}</div>
+      <div class="medal">${medals[i]}</div>
+      <div class="who">${e.class} 班 ${e.num} 號</div>
+      <div class="pts">${e.score} 分</div>
+    </div>`).join('');
+
+  // 第 4 名之後
+  list.innerHTML = rows.slice(3, 20).map((e, i) => `
+    <div class="row">
+      <span class="pos">${i + 4}</span>
+      <span class="who">${e.class} 班 ${e.num} 號 <span class="stat">答對 ${e.correct} 題</span></span>
+      <span class="pts">${e.score} 分</span>
+    </div>`).join('');
+
+  document.getElementById('count').textContent =
+    `共 ${rows.length} 位學生上榜${cls ? '（' + cls + ' 班）' : ''}`;
+}
+
+// stars
+(function () {
+  const c = document.getElementById('stars');
+  for (let i = 0; i < 90; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const sz = 1 + Math.random() * 2.5;
+    s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${1.5+Math.random()*3}s;animation-delay:-${Math.random()*3}s;`;
+    c.appendChild(s);
+  }
+})();
+</script>
+</body>
+</html>

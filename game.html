@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚀 P4 科學科 - 太空冒險</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Noto Sans TC', 'Microsoft YaHei', sans-serif;
+  background: linear-gradient(180deg, #05051a 0%, #0d0d3d 40%, #1a0a3a 100%);
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+
+/* == STARS == */
+.stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+.star {
+  position: absolute; border-radius: 50%; background: #fff;
+  animation: twinkle var(--dur) ease-in-out infinite alternate;
+}
+@keyframes twinkle {
+  0% { opacity: 0.2; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1.2); }
+}
+
+/* == SHOOTING STAR == */
+.shooting-star {
+  position: fixed; width: 4px; height: 4px; background: #fff; border-radius: 50%;
+  box-shadow: 0 0 6px 2px rgba(255,255,255,0.6);
+  animation: shoot 4s linear infinite; pointer-events: none; z-index: 1;
+  top: 10%; left: 80%;
+}
+@keyframes shoot {
+  0% { transform: translate(0, 0); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: translate(-200px, 200px); opacity: 0; }
+}
+
+/* == SCREENS == */
+.screen { display: none; flex-direction: column; align-items: center; width: 100%; max-width: 780px; padding: 16px; position: relative; z-index: 2; }
+.screen.active { display: flex; }
+
+/* == TITLE SCREEN == */
+.title-screen { text-align: center; }
+.title-screen .rocket-title { font-size: 80px; display: block; margin-bottom: 4px; animation: hover 2s ease-in-out infinite; }
+@keyframes hover {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-16px); }
+}
+.title-screen h1 { font-size: 2.8em; color: #ffd700; text-shadow: 0 0 40px #ff8c00, 0 4px 8px rgba(0,0,0,0.5); margin-bottom: 6px; }
+.title-screen .subtitle { color: #99ccff; font-size: 1em; margin-bottom: 8px; }
+.title-screen .route-preview { color: #6666aa; font-size: 1.6em; letter-spacing: 6px; margin: 8px 0 16px; }
+.title-screen .rules { color: #aaa; font-size: 0.9em; line-height: 1.8; margin-bottom: 20px; }
+.title-screen .rules span.highlight { color: #ffd700; font-weight: 700; }
+
+.btn {
+  background: linear-gradient(180deg, #00ccff, #0066ff);
+  border: 3px solid #0044aa; color: #fff;
+  font-size: 1.3em; font-weight: 900; padding: 14px 40px;
+  border-radius: 50px; cursor: pointer; transition: all 0.2s;
+  font-family: inherit; box-shadow: 0 6px 0 #003388, 0 0 30px rgba(0,102,255,0.4);
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 8px 0 #003388, 0 0 40px rgba(0,102,255,0.6); }
+.btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #003388; }
+.btn.restart { background: linear-gradient(180deg, #ff6b6b, #c0392b); border-color: #7b241c; box-shadow: 0 6px 0 #5a1a14; }
+
+/* == LOGIN SCREEN == */
+.login-box {
+  background: rgba(255,255,255,0.06); border: 2px solid rgba(100,150,255,0.25);
+  border-radius: 20px; padding: 22px 24px; margin: 6px 0 18px;
+  display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 360px;
+}
+.login-box label { color: #99ccff; font-size: 0.9em; font-weight: 700; text-align: left; margin-bottom: -6px; }
+.login-input {
+  font-family: inherit; font-size: 1.1em; padding: 12px 16px;
+  border-radius: 12px; border: 2px solid #3a4a7a; background: #0d1030;
+  color: #fff; outline: none; transition: border-color 0.2s; width: 100%;
+}
+.login-input:focus { border-color: #00ccff; }
+.login-input::placeholder { color: #5566aa; }
+select.login-input { cursor: pointer; }
+select.login-input option { background: #0d1030; }
+.login-error { color: #ff6b6b; font-size: 0.85em; min-height: 1.2em; font-weight: 700; }
+.player-tag {
+  color: #88ccff; font-size: 0.85em; margin-bottom: 8px; font-weight: 700;
+}
+
+/* == GAME HEADER == */
+.game-header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; color: #fff; }
+.fuel-display { font-size: 1.2em; }
+.fuel-display .fuel-full { color: #ff4444; }
+.fuel-display .fuel-empty { color: #333; }
+.score-display { color: #ffd700; font-weight: 900; font-size: 1.1em; }
+.combo-display { color: #00ffcc; font-weight: 900; font-size: 0.9em; min-height: 1.4em; }
+
+/* == PLANET PATH == */
+.planet-path {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 8px; position: relative; margin-bottom: 4px;
+  background: rgba(255,255,255,0.03); border-radius: 40px;
+}
+.planet-path::before {
+  content: ''; position: absolute; top: 50%; left: 30px; right: 30px;
+  height: 3px; background: linear-gradient(90deg, #224466, #4466aa, #6644aa);
+  z-index: 0; border-radius: 2px;
+}
+.planet-node {
+  display: flex; flex-direction: column; align-items: center; position: relative; z-index: 1;
+  transition: all 0.3s; width: 30px;
+}
+.planet-node .icon { font-size: 16px; transition: all 0.4s; filter: grayscale(0.8) brightness(0.5); }
+/* 站數多，星球名統一靠下面狀態列顯示，避免迫到一齊 */
+.planet-node .label { display: none; }
+.planet-node.current .icon { font-size: 24px; filter: grayscale(0) brightness(1.2); animation: pulse-planet 1s ease-in-out infinite; }
+.planet-node.visited .icon { filter: grayscale(0) brightness(1); }
+@keyframes pulse-planet {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+/* == ROCKET == */
+.rocket-area {
+  width: 100%; text-align: center; min-height: 40px;
+  font-size: 36px; margin-bottom: 2px;
+  transition: all 0.5s ease;
+}
+.rocket-area.fly { animation: rocket-blast 0.6s ease-in-out; }
+@keyframes rocket-blast {
+  0% { transform: translateY(0) scale(1); }
+  30% { transform: translateY(-20px) scale(1.1); }
+  60% { transform: translateY(5px) scale(0.95); }
+  100% { transform: translateY(0) scale(1); }
+}
+.rocket-area.hit { animation: rocket-shake 0.5s ease-in-out; }
+@keyframes rocket-shake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-10px) rotate(-3deg); }
+  40% { transform: translateX(10px) rotate(3deg); }
+  60% { transform: translateX(-6px) rotate(-2deg); }
+  80% { transform: translateX(6px) rotate(2deg); }
+}
+
+.status-msg {
+  color: #88ccff; font-size: 0.85em; min-height: 1.4em; margin-bottom: 6px;
+  text-align: center; font-weight: 700;
+}
+.status-msg.success { color: #00ff88; }
+.status-msg.fail { color: #ff4444; }
+.status-msg.info { color: #ffd700; }
+
+/* == QUESTION CARD == */
+.question-card {
+  background: rgba(255,255,255,0.92); border-radius: 16px;
+  padding: 18px 20px; width: 100%;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+  border: 2px solid rgba(100,150,255,0.2);
+}
+.question-card .q-label { color: #4466ff; font-weight: 900; font-size: 0.85em; margin-bottom: 4px; }
+.question-card .q-text { font-size: 1.1em; font-weight: 700; color: #1a1a2e; margin-bottom: 14px; line-height: 1.6; }
+.options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.option-btn {
+  background: #f0f4ff; border: 3px solid #ccd8f0;
+  padding: 11px 14px; border-radius: 12px; font-size: 0.95em;
+  cursor: pointer; transition: all 0.15s; text-align: left;
+  font-family: inherit; color: #1a1a2e; font-weight: 600;
+}
+.option-btn:hover { background: #e0eaff; border-color: #8899cc; transform: translateY(-1px); }
+.option-btn.correct { background: #00ff88 !important; border-color: #00aa55 !important; }
+.option-btn.wrong { background: #ff4444 !important; border-color: #cc0000 !important; color: #fff !important; animation: shake 0.4s; }
+.option-btn:disabled { pointer-events: none; }
+
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+
+/* == RESULT SCREEN == */
+.result-screen { text-align: center; }
+.result-screen .big-icon { font-size: 100px; display: block; margin-bottom: 8px; }
+.result-screen h2 { color: #ffd700; font-size: 2em; margin: 6px 0; }
+.result-screen .stats { color: #ccc; font-size: 1em; line-height: 2; margin: 8px 0 20px; }
+.result-screen .stats span { color: #ffd700; font-weight: 900; }
+.save-status { color: #00ffaa; font-size: 0.85em; min-height: 1.2em; margin-bottom: 10px; font-weight: 700; }
+.save-status.saving { color: #ffd700; }
+.save-status.error { color: #ff6b6b; }
+
+/* == LEADERBOARD == */
+.leaderboard {
+  width: 100%; max-width: 380px; margin: 4px auto 16px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(120,160,255,0.25);
+  border-radius: 14px; padding: 12px 14px;
+}
+.leaderboard .lb-title { color: #ffd700; font-weight: 900; font-size: 1em; margin-bottom: 4px; }
+.leaderboard .lb-myrank { color: #00ffcc; font-size: 0.9em; font-weight: 700; margin-bottom: 8px; }
+.leaderboard .lb-loading { color: #8899cc; font-size: 0.85em; padding: 6px 0; }
+.lb-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 10px; border-radius: 8px; font-size: 0.9em; color: #d8e0ff;
+}
+.lb-row + .lb-row { margin-top: 2px; }
+.lb-row .lb-pos { width: 34px; text-align: center; font-weight: 900; }
+.lb-row .lb-who { flex: 1; text-align: left; padding-left: 6px; }
+.lb-row .lb-pts { color: #ffd700; font-weight: 900; }
+.lb-row.me { background: rgba(0,255,200,0.15); border: 1px solid rgba(0,255,200,0.5); }
+.lb-row.me .lb-who { color: #00ffcc; }
+.lb-sep { color: #5566aa; text-align: center; font-size: 0.8em; margin: 4px 0; }
+
+/* == RESPONSIVE == */
+@media (max-width: 600px) {
+  .planet-node .label { display: none; }
+  .planet-node { width: 16px; }
+  .planet-path { padding: 10px 4px; }
+  .planet-node .icon { font-size: 12px; }
+  .planet-node.current .icon { font-size: 18px; }
+  .options { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .option-btn { font-size: 0.85em; padding: 10px 10px; }
+  .question-card { padding: 14px 14px; }
+  .title-screen h1 { font-size: 2em; }
+  .title-screen .rocket-title { font-size: 60px; }
+}
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<div class="shooting-star"></div>
+
+<!-- ====== LOGIN ====== -->
+<div class="screen active" id="loginScreen">
+  <div class="title-screen">
+    <span class="rocket-title">🚀</span>
+    <h1>太空冒險</h1>
+    <p class="subtitle">四年級科學科．考試溫習</p>
+    <div class="login-box">
+      <label for="classInput">🏫 班別</label>
+      <select class="login-input" id="classInput">
+        <option value="">— 請揀班別 —</option>
+        <!-- 班別由下面 JS 嘅 CLASSES 自動產生 -->
+      </select>
+      <label for="numInput">🔢 學號</label>
+      <select class="login-input" id="numInput">
+        <option value="">— 請揀學號 —</option>
+        <!-- 學號由下面 JS 自動產生 1～40 -->
+      </select>
+    </div>
+    <div class="login-error" id="loginError"></div>
+    <button class="btn" onclick="login()">登入 →</button>
+  </div>
+</div>
+
+<!-- ====== TITLE ====== -->
+<div class="screen" id="titleScreen">
+  <div class="title-screen">
+    <span class="rocket-title">🚀</span>
+    <h1>太空冒險</h1>
+    <p class="subtitle">四年級科學科．考試溫習</p>
+    <div class="player-tag" id="playerTag"></div>
+    <div class="route-preview">🌍 → 🌙 → ☀️ → 🪐 → 🌌 → … → 🏆</div>
+    <p class="rules">
+      <span class="highlight">✅ 答對</span> — 火箭前進到下一個星球<br>
+      <span class="highlight">❌ 答錯</span> — 消耗 1 點燃料，停留原地<br>
+      🔥 連續答對 3 題觸發加速 bonus！<br>
+      ⛽ 燃料用完 = 太空漂流... Game Over<br>
+      🏆 跨越 <span class="highlight">20 個星球</span> = 冒險成功！
+    </p>
+    <button class="btn" onclick="startGame()">🚀 出發！</button>
+  </div>
+</div>
+
+<!-- ====== GAME ====== -->
+<div class="screen" id="gameScreen">
+  <div class="game-header">
+    <div class="fuel-display" id="fuelDisplay">⛽ ❤️❤️❤️❤️❤️</div>
+    <div class="score-display" id="scoreDisplay">⚡ 0 分</div>
+    <div class="combo-display" id="comboDisplay"></div>
+  </div>
+
+  <div class="planet-path" id="planetPath"></div>
+
+  <div class="rocket-area" id="rocketArea">🚀</div>
+  <div class="status-msg" id="statusMsg">🌍 準備好未？向第一站出發！</div>
+
+  <div class="question-card" id="questionCard">
+    <div class="q-label" id="qLabel">選擇題</div>
+    <div class="q-text" id="qText"></div>
+    <div class="options" id="optionsContainer"></div>
+  </div>
+</div>
+
+<!-- ====== RESULT ====== -->
+<div class="screen" id="resultScreen">
+  <div class="result-screen">
+    <span class="big-icon" id="resultIcon">🏆</span>
+    <h2 id="resultTitle">恭喜通關！</h2>
+    <div class="stats" id="resultStats"></div>
+    <div class="save-status" id="saveStatus"></div>
+    <div class="leaderboard" id="leaderboard" style="display:none;"></div>
+    <button class="btn" onclick="startGame()">🔄 再玩一次，爭第一！</button>
+  </div>
+</div>
+
+<!-- ====== FIREBASE SDK ====== -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  ⚙️ Firebase 設定 — 將你 Firebase 專案嘅 config 貼喺呢度       ║
+// ║  （步驟見另一份說明，唔識可以問我）                            ║
+// ╚══════════════════════════════════════════════════════════════╝
+const firebaseConfig = {
+  apiKey: "貼上你嘅_API_KEY",
+  authDomain: "你嘅專案.firebaseapp.com",
+  projectId: "你嘅專案ID",
+  storageBucket: "你嘅專案.appspot.com",
+  messagingSenderId: "貼上你嘅",
+  appId: "貼上你嘅"
+};
+
+let db = null;
+try {
+  // 只要 config 仲未填，就唔會連線，遊戲照玩，只係唔記錄成績
+  if (!firebaseConfig.projectId.startsWith("你嘅")) {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+  }
+} catch (e) {
+  console.warn("Firebase 未設定好，成績將唔會記錄：", e);
+}
+</script>
+
+<script>
+// ==================== STUDENT INFO ====================
+// 👇 改呢度就可以改班別選項
+const CLASSES = ['4A', '4B', '4C', '4D', '4E'];
+// 👇 改呢度就可以改學號範圍（預設 1～40）
+const MAX_NUM = 40;
+
+let studentName = '';      // 唔再要打名，留空
+let studentClass = '';
+let studentNum = '';
+
+// 填充班別、學號兩個下拉選單（全部用揀，唔使打字）
+(function fillSelectors() {
+  const classSel = document.getElementById('classInput');
+  CLASSES.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    classSel.appendChild(o);
+  });
+  const numSel = document.getElementById('numInput');
+  for (let i = 1; i <= MAX_NUM; i++) {
+    const o = document.createElement('option');
+    o.value = String(i); o.textContent = i + ' 號';
+    numSel.appendChild(o);
+  }
+})();
+
+function login() {
+  const klass = document.getElementById('classInput').value;
+  const num = document.getElementById('numInput').value;
+  const err = document.getElementById('loginError');
+
+  if (!klass) { err.textContent = '⚠️ 請揀返你嘅班別'; return; }
+  if (!num) { err.textContent = '⚠️ 請揀返你嘅學號'; return; }
+
+  studentClass = klass;
+  studentNum = num;
+  err.textContent = '';
+
+  document.getElementById('playerTag').textContent =
+    `🧑‍🚀 ${studentClass} 班 ${studentNum} 號`;
+
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('titleScreen').classList.add('active');
+}
+
+// 喺登入畫面撳 Enter 都可以登入
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && document.getElementById('loginScreen').classList.contains('active')) {
+    login();
+  }
+});
+
+// ==================== PLANETS ====================
+// 🎯 要答啱幾多題先過關 = 呢個陣列嘅站數 - 1（而家係 20 題）
+//    想改題數，就喺度加／減站就得。
+const planets = [
+  { name: '地球', icon: '🌍' },
+  { name: '雲層', icon: '☁️' },
+  { name: '月球', icon: '🌙' },
+  { name: '太空站', icon: '🛰️' },
+  { name: '彗星', icon: '☄️' },
+  { name: '水星', icon: '🟤' },
+  { name: '金星', icon: '🟠' },
+  { name: '太陽', icon: '☀️' },
+  { name: '火星', icon: '🔴' },
+  { name: '小行星帶', icon: '🌑' },
+  { name: '木星', icon: '🪐' },
+  { name: '土星', icon: '💫' },
+  { name: '天王星', icon: '🔵' },
+  { name: '海王星', icon: '🟣' },
+  { name: '流星', icon: '🌠' },
+  { name: '星雲', icon: '🌌' },
+  { name: '銀河', icon: '✨' },
+  { name: '黑洞', icon: '⚫' },
+  { name: '外星基地', icon: '🛸' },
+  { name: '神秘行星', icon: '👽' },
+  { name: '終點', icon: '🏆' },
+];
+
+// ==================== QUESTION BANK ====================
+const allQuestions = [
+  // ── 🔬 物質特性 ──
+  { label: '🔬 物質特性', q: '地盤判頭要揀物料搭建棚架，需要堅固、承受得起重物嘅材料。以下邊種最適合？', opts: ['A. 玻璃磚', 'B. 鋼管', 'C. 紙皮', 'D. 發泡膠磚'], ans: 1 },
+  { label: '🔬 物質特性', q: '廚房入面個鐵鑊煎緊餃子，鑊身好熱但手柄唔辣手。點解？', opts: ['A. 手柄用膠造，膠係不良導熱體', 'B. 手柄曉自動散熱', 'C. 手柄離火遠就唔熱', 'D. 手柄會吸走熱力'], ans: 0 },
+  { label: '🔬 物質特性', q: '小明將銅線同膠線分別放入電路，發現銅線可以令燈膽發光、膠線唔得。呢個實驗證明咗咩？', opts: ['A. 銅線比膠線靚', 'B. 金屬係導電體、膠係絕緣體', 'C. 膠線太幼', 'D. 銅線會發熱'], ans: 1 },
+  { label: '🔬 物質特性', q: '花園嘅鐵欄杆生咗啡紅色嘅鏽，鏽同原本嘅鐵相比有咩唔同？', opts: ['A. 鏽係新物質，同鐵嘅性質唔同', 'B. 鏽同鐵完全一樣', 'C. 鏽只係鐵表面污糟咗', 'D. 鏽係鐵變返做原始狀態'], ans: 0 },
+  { label: '🔬 物質特性', q: '滴咗油嘅鐵鏈比起冇滴油嘅鐵鏈更耐用，主要原因係？', opts: ['A. 油令鐵鏈更靚', 'B. 油形成保護層隔絕水同空氣，防鏽', 'C. 油令鐵鏈更軟', 'D. 油令鐵鏈更重'], ans: 1 },
+  { label: '🔬 物質特性', q: '電工用膠轆嚟收納電線，唔直接用金屬轆。點解？', opts: ['A. 膠轆比較平', 'B. 膠係絕緣體，萬一漏電都唔會觸電', 'C. 膠轆比較輕', 'D. 膠轆顏色靚啲'], ans: 1 },
+  { label: '🔬 物質特性', q: '用鐵錘敲鐵釘，鐵釘會插入木板。如果用玻璃錘敲鐵釘會點？', opts: ['A. 一樣插到入去', 'B. 玻璃會碎爛', 'C. 鐵釘會變彎', 'D. 冇分別'], ans: 1 },
+
+  // ── ⚗️ 變化類型 ──
+  { label: '⚗️ 變化類型', q: '細路將紙巾撕成兩半，再點火燒咗其中一半。呢兩種變化有咩分別？', opts: ['A. 撕開係化學變化，燒係物理變化', 'B. 撕開係物理變化，燒係化學變化', 'C. 兩個都係化學變化', 'D. 兩個都係物理變化'], ans: 1 },
+  { label: '⚗️ 變化類型', q: '以下邊個過程會產生全新嘅物質？', opts: ['A. 將糖溶入水中', 'B. 將衫晾乾', 'C. 將鐵釘放喺潮濕環境生鏽', 'D. 將毛冷織成冷衫'], ans: 2 },
+  { label: '⚗️ 變化類型', q: '老豆用米釀酒，將米發酵之後變成酒。呢個過程屬於？', opts: ['A. 物理變化，因為都係液體', 'B. 物理變化，因為酒嘅顏色同米似', 'C. 化學變化，因為產生了新物質（酒精）', 'D. 冇變化，米仲係米'], ans: 2 },
+  { label: '⚗️ 變化類型', q: '焗蛋糕嗰陣，麵團喺焗爐入面發大變金黃色。以下邊個情況同焗蛋糕最似？', opts: ['A. 冰塊喺枱面溶化', 'B. 紙巾濕水再曬乾', 'C. 燒烤爐入面嘅炭燃燒', 'D. 橡筋圈俾人拉長'], ans: 2 },
+  { label: '⚗️ 變化類型', q: '蘋果切開之後，切面慢慢變成啡色。呢個變化嘅原因係？', opts: ['A. 蘋果嘅水份蒸發咗', 'B. 蘋果接觸空氣產生咗新物質（氧化）', 'C. 蘋果嘅顏色自然會變', 'D. 蘋果俾刀整傷咗'], ans: 1 },
+  { label: '⚗️ 變化類型', q: '以下邊樣只能夠改變物件嘅形狀，唔會產生新物質？', opts: ['A. 將紙巾燃燒', 'B. 將鐵釘拗彎', 'C. 將雞蛋煮熟', 'D. 將蛋糕焗燶'], ans: 1 },
+  { label: '⚗️ 變化類型', q: '實驗室用電解水嚟製造氫氣同氧氣。呢個係咩變化？', opts: ['A. 物理變化，因為水變咗做氣體', 'B. 化學變化，因為水分解成兩種新物質', 'C. 冇變化', 'D. 只係狀態改變'], ans: 1 },
+
+  // ── 💡 光的奧秘 ──
+  { label: '💡 光的奧秘', q: '停電嘅晚上，入黑之後四周乜都睇唔到。點解？', opts: ['A. 眼睛喺夜晚會壞', 'B. 冇光源照射物件，光冇入到眼睛', 'C. 所有物件都消失咗', 'D. 黑色會吸走所有光'], ans: 1 },
+  { label: '💡 光的奧秘', q: '阿家將電筒照向浴室嘅企鏡，光線會點樣？', opts: ['A. 穿過塊鏡', 'B. 被鏡面反射返轉頭', 'C. 被鏡面吸收晒', 'D. 喺鏡面消失'], ans: 1 },
+  { label: '💡 光的奧秘', q: '用一塊磨砂咗嘅鏡照樣，睇到自己個樣好矇。磨砂鏡嘅表面其實係？', opts: ['A. 更加平滑', 'B. 凹凸不平，光線向多方向反射', 'C. 有顏色', 'D. 完全唔反射'], ans: 1 },
+  { label: '💡 光的奧秘', q: '中秋節玩燈籠，入面支蠟燭着咗之後，成個燈籠就發光。邊個係光源？', opts: ['A. 燈籠紙', 'B. 蠟燭嘅火焰', 'C. 周圍嘅空氣', 'D. 月亮'], ans: 1 },
+  { label: '💡 光的奧秘', q: '天文台用氣象衞星監測颱風。衞星喺太空係點影到地球表面嘅相？', opts: ['A. 衞星自己開着大光燈照落嚟', 'B. 衞星接收地球反射嘅太陽光', 'C. 衞星入面有位攝影師', 'D. 靠月球幫手照明'], ans: 1 },
+  { label: '💡 光的奧秘', q: '望遠鏡嘅鏡片令遠方嘅山睇落好近。呢個現象係因為光產生咗咩？', opts: ['A. 反射', 'B. 折射', 'C. 吸收', 'D. 消失'], ans: 1 },
+  { label: '💡 光的奧秘', q: '太陽光穿過三稜鏡之後會變成彩虹色。呢個現象顯示咗咩？', opts: ['A. 三稜鏡會發光', 'B. 陽光由多種顏色組成', 'C. 三稜鏡入面有顏料', 'D. 光會停喺鏡入面'], ans: 1 },
+
+  // ── 🛞 摩擦力 ──
+  { label: '🛞 摩擦力', q: '你將一張枱上嘅書由右邊推向中間。枱面對本書嘅摩擦力會向邊個方向？', opts: ['A. 向右', 'B. 向左', 'C. 向上', 'D. 向前'], ans: 0 },
+  { label: '🛞 摩擦力', q: '同學做實驗比較唔同物料表面嘅摩擦力，佢可以拉動件物件度到咩數值嚟比較？', opts: ['A. 件物件嘅重量', 'B. 需要用幾大嘅力先拉到郁', 'C. 件物件嘅顏色', 'D. 件物件嘅温度'], ans: 1 },
+  { label: '🛞 摩擦力', q: '冬天行商場，地板好滑。地氈區域同瓷磚區域相比，邊度摩擦力大啲？', opts: ['A. 瓷磚摩擦力大啲', 'B. 地氈摩擦力大啲', 'C. 一樣', 'D. 冇摩擦力'], ans: 1 },
+  { label: '🛞 摩擦力', q: '搬屋公司用板車（手推車）搬運沉重嘅衣柜，係想利用乜嘢原理？', opts: ['A. 加滾輪減少摩擦力，容易移動', 'B. 加滾輪增加摩擦力，唔會滑走', 'C. 令衣柜更靚', 'D. 保護地板'], ans: 0 },
+  { label: '🛞 摩擦力', q: '以下邊樣產品係為咗增加摩擦力而設計？', opts: ['A. 雪屐嘅光滑底部', 'B. 門鉸嘅潤滑油', 'C. 波鞋鞋底嘅坑紋', 'D. 保齡球道嘅蠟'], ans: 2 },
+  { label: '🛞 摩擦力', q: '小珊着住對鞋底磨蝕晒嘅舊布鞋去圖書館，喺光滑地板差啲跣親。點解？', opts: ['A. 鞋底花紋冇咗，摩擦力變細', 'B. 鞋底變得太硬', 'C. 鞋太輕', 'D. 地板太乾淨'], ans: 0 },
+  { label: '🛞 摩擦力', q: '校工將潤滑油滴落門鉸之後，開門就冇晒「吱吱」聲。潤滑油嘅作用係？', opts: ['A. 增加摩擦力，令門更實', 'B. 減少摩擦力，令門轉動更順', 'C. 清潔門鉸', 'D. 令門更靚'], ans: 1 },
+  { label: '🛞 摩擦力', q: '實驗比較網球喺三種表面（畫紙、砂紙、絨布）嘅摩擦力。要公平測試，以下邊項係必須保持不變？', opts: ['A. 球嘅顏色', 'B. 斜板嘅傾斜角度同球開始位置', 'C. 室內嘅温度', 'D. 枱嘅高度'], ans: 1 },
+
+  // ── 🚀 太空探索 ──
+  { label: '🚀 太空探索', q: '中國航天員當中，邊位係第一位上太空嘅女航天員？', opts: ['A. 楊利偉', 'B. 劉洋', 'C. 翟志剛', 'D. 聶海勝'], ans: 1 },
+  { label: '🚀 太空探索', q: '太空人喺太空站剪頭髮，要用吸塵機一邊剪一邊吸走碎髮，因為？', opts: ['A. 太空冇重力，頭髮碎會四圍飄', 'B. 太空太凍', 'C. 太空站要保持乾淨', 'D. 頭髮會爆炸'], ans: 0 },
+  { label: '🚀 太空探索', q: '太空船返回地球時穿越大氣層，外殼產生高溫。點解會咁？', opts: ['A. 太陽直接照射', 'B. 高速飛行同空氣摩擦生熱', 'C. 地球地心嘅熱力', 'D. 太空船引擎嘅熱'], ans: 1 },
+  { label: '🚀 太空探索', q: '導航軟件（例如Google Maps）幫你搵最快路線去機場，主要用到邊種衞星？', opts: ['A. 氣象衞星', 'B. 導航衞星', 'C. 通訊衞星', 'D. 軍事衞星'], ans: 1 },
+  { label: '🚀 太空探索', q: '太空同地球嘅環境好唔同。以下邊項係太空環境嘅特點？', opts: ['A. 充滿氧氣，呼吸順暢', 'B. 溫度恆常不變', 'C. 有強烈輻射同微小高速碎片', 'D. 有穩定嘅氣壓'], ans: 2 },
+  { label: '🚀 太空探索', q: '電視台直播奧運會，信號要由香港傳送到世界各地。主要依賴邊種人造衞星？', opts: ['A. 導航衞星', 'B. 通訊衞星', 'C. 氣象衞星', 'D. 偵察衞星'], ans: 1 },
+  { label: '🚀 太空探索', q: '太空人出艙活動前一定要着好太空衣，最關鍵嘅原因係？', opts: ['A. 太空衣好靚', 'B. 太空衣可以提供氧氣、隔絕輻射同維持溫度', 'C. 太空衣有無線電可以傾偈', 'D. 太空衣可以裝好多嘢'], ans: 1 },
+
+  // ── 🧪 生活科學 ──
+  { label: '🧪 生活科學', q: '嫲嫲用生果廚餘加黃糖自製環保清潔劑。佢發覺發酵嗰陣個樽會脹卜卜，點解？', opts: ['A. 因為天氣太熱個樽膨脹', 'B. 發酵產生咗氣體，積聚喺樽入面', 'C. 生果發大咗', 'D. 黃糖溶咗之後體積變大'], ans: 1 },
+  { label: '🧪 生活科學', q: '小食店用電熱板烤雞蛋仔，塊金屬板好快熱到出煙，但隔離嘅膠手柄一啲都唔辣手。呢個現象解釋咗咩？', opts: ['A. 金屬同膠導熱速度一樣', 'B. 金屬導熱比膠快好多', 'C. 膠唔會傳熱', 'D. 金屬手柄嘅温度其實冇咁高'], ans: 1 },
+  { label: '🧪 生活科學', q: '浴室嘅地磚鋪咗防滑地氈，呢個設計係應用咗邊個科學原理？', opts: ['A. 增加摩擦力，減少跣倒風險', 'B. 減少摩擦力，行路更輕鬆', 'C. 令浴室更靚', 'D. 加快水流走'], ans: 0 },
+  { label: '🧪 生活科學', q: '實驗室用鐵架台固定儀器，鐵架台嘅底座又大又重。呢個設計目的係？', opts: ['A. 增加穩定性，避免成個架冧低', 'B. 方便搬運', 'C. 令實驗更靚', 'D. 導熱更快'], ans: 0 },
+  { label: '🧪 生活科學', q: '包裝食物嘅錫紙（鋁箔紙）嘅邊緣好利，好容易界親手。以下邊種解釋最合理？', opts: ['A. 鋁箔係金屬，可以做到好薄好鋒利', 'B. 鋁箔本身有毒', 'C. 鋁箔係膠造嘅', 'D. 鋁箔嘅邊緣有玻璃纖維'], ans: 0 },
+  { label: '🧪 生活科學', q: '阿強發覺鐵製嘅單車鏈生鏽之後踩得好吃力。以下邊個做法最啱？', opts: ['A. 倒水上去沖走啲鏽', 'B. 滴潤滑油減少摩擦', 'C. 換膠鏈', 'D. 用火燒走啲鏽'], ans: 1 },
+];
+
+// ==================== GAME STATE ====================
+let currentPlanet, fuel, score, combo, totalCorrect, totalWrong, maxCombo;
+let usedQuestions, isAnswering, currentQuestion, scoreSaved;
+const MAX_FUEL = 8;   // ⛽ 答錯幾多次先 Game Over（越大越容易玩到尾）
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ==================== RENDER PLANET PATH ====================
+function renderPlanetPath() {
+  const container = document.getElementById('planetPath');
+  container.innerHTML = '';
+  planets.forEach((p, i) => {
+    const node = document.createElement('div');
+    node.className = 'planet-node';
+    if (i === currentPlanet) node.classList.add('current');
+    else if (i < currentPlanet) node.classList.add('visited');
+    node.innerHTML = `<div class="icon">${p.icon}</div><div class="label">${p.name}</div>`;
+    container.appendChild(node);
+  });
+}
+
+// ==================== START ====================
+function startGame() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('gameScreen').classList.add('active');
+
+  currentPlanet = 0;
+  fuel = MAX_FUEL;
+  score = 0; combo = 0; maxCombo = 0; totalCorrect = 0; totalWrong = 0;
+  usedQuestions = [];
+  isAnswering = false;
+  scoreSaved = false;
+
+  renderPlanetPath();
+  updateUI();
+  document.getElementById('statusMsg').textContent = '🌍 從地球出發！準備好未？';
+  document.getElementById('rocketArea').textContent = '🚀';
+  document.getElementById('comboDisplay').textContent = '';
+  nextQuestion();
+}
+
+// ==================== NEXT QUESTION ====================
+function nextQuestion() {
+  if (isAnswering) return;
+  if (usedQuestions.length >= allQuestions.length) usedQuestions = [];
+  const available = allQuestions.filter((_, i) => !usedQuestions.includes(i));
+  if (available.length === 0) { usedQuestions = []; return nextQuestion(); }
+
+  const idx = allQuestions.indexOf(available[Math.floor(Math.random() * available.length)]);
+  usedQuestions.push(idx);
+  currentQuestion = allQuestions[idx];
+
+  document.getElementById('qLabel').textContent = currentQuestion.label;
+  document.getElementById('qText').textContent = currentQuestion.q;
+
+  const container = document.getElementById('optionsContainer');
+  container.innerHTML = '';
+  currentQuestion.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => answer(i));
+    container.appendChild(btn);
+  });
+}
+
+// ==================== ANSWER ====================
+function answer(idx) {
+  if (isAnswering) return;
+  isAnswering = true;
+
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach((b, i) => {
+    b.disabled = true;
+    if (i === currentQuestion.ans) b.classList.add('correct');
+  });
+
+  const rocket = document.getElementById('rocketArea');
+  const status = document.getElementById('statusMsg');
+  status.className = 'status-msg';
+
+  if (idx === currentQuestion.ans) {
+    // ✅ CORRECT
+    combo++;
+    if (combo > maxCombo) maxCombo = combo;
+    totalCorrect++;
+    score += 10 + (combo >= 3 ? combo * 2 : 0);
+    currentPlanet = Math.min(currentPlanet + 1, planets.length - 1);
+
+    // Animations
+    rocket.className = 'rocket-area fly';
+    setTimeout(() => { rocket.className = 'rocket-area'; }, 600);
+
+    const dest = planets[currentPlanet];
+    if (currentPlanet >= planets.length - 1) {
+      status.textContent = `🎉 到達 ${dest.name}！冒險完成！`;
+      status.className = 'status-msg success';
+    } else {
+      const bonus = combo >= 3 ? ` 🔥 ${combo} 連擊 bonus!` : '';
+      status.textContent = `✅ 答對了！火箭飛向 ${dest.icon} ${destName(dest)}！${bonus}`;
+      status.className = 'status-msg success';
+    }
+
+    if (combo >= 3) document.getElementById('comboDisplay').textContent = `🔥 ${combo} 連擊！`;
+  } else {
+    // ❌ WRONG
+    btns[idx].classList.add('wrong');
+    combo = 0;
+    totalWrong++;
+    fuel--;
+    score = Math.max(0, score - 5);
+
+    rocket.className = 'rocket-area hit';
+    setTimeout(() => { rocket.className = 'rocket-area'; }, 500);
+
+    status.textContent = fuel > 0
+      ? `❌ 燃料洩漏！⛽ 剩餘 ${fuel} 點燃料`
+      : `❌ 燃料耗盡！`;
+    status.className = 'status-msg fail';
+    document.getElementById('comboDisplay').textContent = '';
+  }
+
+  renderPlanetPath();
+  updateUI();
+
+  setTimeout(() => {
+    if (currentPlanet >= planets.length - 1) {
+      victory();
+    } else if (fuel <= 0) {
+      gameOver();
+    } else {
+      isAnswering = false;
+      nextQuestion();
+    }
+  }, 1300);
+}
+
+function destName(p) { return p.name; }
+
+// ==================== UPDATE UI ====================
+function updateUI() {
+  // Fuel hearts
+  let fuelStr = '⛽ ';
+  for (let i = 0; i < MAX_FUEL; i++) {
+    fuelStr += i < fuel ? '❤️' : '🖤';
+  }
+  document.getElementById('fuelDisplay').textContent = fuelStr;
+  document.getElementById('scoreDisplay').textContent = `⚡ ${score} 分`;
+}
+
+// ==================== VICTORY ====================
+function victory() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('resultScreen').classList.add('active');
+  document.getElementById('resultIcon').textContent = '🏆';
+  document.getElementById('resultTitle').textContent = '🎉 太空冒險成功！';
+  const grade = totalWrong === 0 ? 'S 完美星際指揮官' : totalWrong <= 2 ? 'A 太空探險家' : totalWrong <= 4 ? 'B 星際旅人' : 'C 太空見習生';
+  document.getElementById('resultStats').innerHTML = `
+    評級：<span>${grade}</span><br>
+    答對：<span>${totalCorrect} 題</span>　答錯：<span>${totalWrong} 題</span><br>
+    總分：<span>${score} 分</span><br>
+    剩餘燃料：<span>${'❤️'.repeat(fuel)}${'🖤'.repeat(MAX_FUEL - fuel)}</span><br>
+    最高連擊：<span style="color:#00ffcc">${maxCombo} 連擊</span><br><br>
+    🌟 出色嘅小太空人！
+  `;
+  saveScore('win', grade);
+}
+
+// ==================== GAME OVER ====================
+function gameOver() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('resultScreen').classList.add('active');
+  document.getElementById('resultIcon').textContent = '🛸';
+  document.getElementById('resultTitle').textContent = '💥 燃料耗盡...';
+  document.getElementById('resultStats').innerHTML = `
+    到達星球：<span>${planets[currentPlanet].icon} ${planets[currentPlanet].name}</span><br>
+    答對：<span>${totalCorrect} 題</span>　答錯：<span>${totalWrong} 題</span><br>
+    總分：<span>${score} 分</span><br>
+    最高連擊：<span style="color:#00ffcc">${maxCombo} 連擊</span><br><br>
+    🔄 補充燃料再挑戰！
+  `;
+  saveScore('lose', '');
+}
+
+// ==================== SAVE SCORE TO FIREBASE ====================
+function saveScore(result, grade) {
+  const el = document.getElementById('saveStatus');
+  if (scoreSaved) return;        // 同一局只記錄一次
+  scoreSaved = true;
+
+  if (!db) {
+    el.className = 'save-status';
+    el.textContent = '';         // Firebase 未設定，唔顯示任何嘢，遊戲照常
+    return;
+  }
+
+  el.className = 'save-status saving';
+  el.textContent = '💾 正在記錄成績…';
+
+  db.collection('scores').add({
+    name: studentName,
+    class: studentClass,
+    num: studentNum || '',
+    score: score,
+    correct: totalCorrect,
+    wrong: totalWrong,
+    maxCombo: maxCombo,
+    result: result,                       // 'win' 或 'lose'
+    reached: planets[currentPlanet].name,  // 到達邊個星球
+    grade: grade || '',
+    fuelLeft: fuel,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  })
+  .then(() => {
+    el.className = 'save-status';
+    el.textContent = '✅ 成績已記錄！';
+    loadLeaderboard();
+  })
+  .catch((err) => {
+    console.error('記錄成績失敗：', err);
+    el.className = 'save-status error';
+    el.textContent = '⚠️ 成績記錄失敗（可截圖比老師）';
+  });
+}
+
+// ==================== LEADERBOARD（排行榜）====================
+// 用「每位學生嘅最高分」排名，唔會畀一個人狂玩洗版
+function loadLeaderboard() {
+  const box = document.getElementById('leaderboard');
+  if (!db) { box.style.display = 'none'; return; }
+
+  box.style.display = 'block';
+  box.innerHTML = '<div class="lb-loading">🏆 載入排行榜…</div>';
+
+  db.collection('scores').get().then(snap => {
+    // 計每位學生（班別+學號）嘅最高分
+    const best = {};
+    snap.forEach(doc => {
+      const d = doc.data();
+      const key = (d.class || '') + '|' + (d.num || '');
+      const t = (d.createdAt && d.createdAt.toDate) ? d.createdAt.toDate().getTime() : 0;
+      if (!best[key] || (d.score || 0) > best[key].score) {
+        best[key] = { key, class: d.class, num: d.num, score: d.score || 0, t };
+      }
+    });
+
+    // 分數高→低；同分就睇邊個先攞到（時間早優先）
+    const list = Object.values(best).sort((a, b) => b.score - a.score || a.t - b.t);
+    const myKey = studentClass + '|' + studentNum;
+    const myRank = list.findIndex(e => e.key === myKey) + 1;
+    const medals = ['🥇', '🥈', '🥉'];
+
+    let html = '<div class="lb-title">🏆 班際排行榜</div>';
+    if (myRank === 1) {
+      html += '<div class="lb-myrank">👑 你而家係第 1 名！守住佢！</div>';
+    } else if (myRank > 0) {
+      html += `<div class="lb-myrank">你而家排第 ${myRank} 名，再玩追上去！</div>`;
+    }
+
+    const rowHTML = (e, rank) => {
+      const me = e.key === myKey ? ' me' : '';
+      const pos = rank <= 3 ? medals[rank - 1] : rank;
+      return `<div class="lb-row${me}">
+        <span class="lb-pos">${pos}</span>
+        <span class="lb-who">${e.class} 班 ${e.num} 號${me ? '（你）' : ''}</span>
+        <span class="lb-pts">${e.score} 分</span>
+      </div>`;
+    };
+
+    // 顯示頭 10 名
+    const top = list.slice(0, 10);
+    top.forEach((e, i) => { html += rowHTML(e, i + 1); });
+
+    // 如果自己跌出頭 10，喺下面補返自己嗰行
+    if (myRank > 10) {
+      html += '<div class="lb-sep">⋯⋯</div>';
+      html += rowHTML(list[myRank - 1], myRank);
+    }
+
+    box.innerHTML = html;
+  }).catch(err => {
+    console.error('排行榜載入失敗：', err);
+    box.style.display = 'none';
+  });
+}
+
+// ==================== STARS ====================
+function createStars() {
+  const container = document.getElementById('stars');
+  for (let i = 0; i < 80; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = 1 + Math.random() * 3;
+    s.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${Math.random() * 100}%; top:${Math.random() * 100}%;
+      --dur: ${1.5 + Math.random() * 3}s;
+      animation-delay: -${Math.random() * 3}s;
+    `;
+    container.appendChild(s);
+  }
+}
+createStars();
+</script>
+</body>
+</html>
