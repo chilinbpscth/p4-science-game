@@ -93,6 +93,7 @@ select.login-input option { background: #0d1030; }
 .fuel-display .fuel-empty { color: #333; }
 .score-display { color: #ffd700; font-weight: 900; font-size: 1.1em; }
 .combo-display { color: #00ffcc; font-weight: 900; font-size: 0.9em; min-height: 1.4em; }
+.timer-display { color: #ffcc00; font-weight: 900; font-size: 1.1em; min-height: 1.4em; text-align: right; }
 
 /* == PLANET PATH == */
 .planet-path {
@@ -291,6 +292,7 @@ select.login-input option { background: #0d1030; }
     <div class="fuel-display" id="fuelDisplay">⛽ ❤️❤️❤️❤️❤️</div>
     <div class="score-display" id="scoreDisplay">⚡ 0 分</div>
     <div class="combo-display" id="comboDisplay"></div>
+    <div class="timer-display" id="timerDisplay">⏱ 30s</div>
   </div>
 
   <div class="planet-path" id="planetPath"></div>
@@ -453,6 +455,8 @@ const allQuestions = [
 // ==================== GAME STATE ====================
 let currentPlanet, fuel, score, combo, totalCorrect, totalWrong, maxCombo;
 let usedQuestions, isAnswering, currentQuestion, scoreSaved;
+let questionTimer = null;
+let timeLeft = 30;
 const MAX_FUEL = 8;   // ⛽ 答錯多少次就會 Game Over（數值越大越容易玩到底）
 
 function shuffle(arr) {
@@ -495,6 +499,7 @@ function startGame() {
   document.getElementById('statusMsg').textContent = '🌍 從地球出發！準備好了嗎？';
   document.getElementById('rocketArea').textContent = '🚀';
   document.getElementById('comboDisplay').textContent = '';
+  clearQuestionTimer();
   nextQuestion();
 }
 
@@ -524,12 +529,16 @@ function nextQuestion() {
     btn.addEventListener('click', () => answer(i));
     container.appendChild(btn);
   });
+
+  // 開始 30 秒計時器
+  startQuestionTimer();
 }
 
 // ==================== ANSWER ====================
 function answer(idx) {
   if (isAnswering) return;
   isAnswering = true;
+  clearQuestionTimer();
 
   const btns = document.querySelectorAll('.option-btn');
   btns.forEach((b, i) => {
@@ -618,6 +627,36 @@ function updateUI() {
   }
   document.getElementById('fuelDisplay').textContent = fuelStr;
   document.getElementById('scoreDisplay').textContent = `⚡ ${score} 分`;
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timerDisplay');
+  if (el) el.textContent = `⏱ ${timeLeft}s`;
+}
+
+function clearQuestionTimer() {
+  if (questionTimer) {
+    clearInterval(questionTimer);
+    questionTimer = null;
+  }
+}
+
+function startQuestionTimer() {
+  clearQuestionTimer();
+  timeLeft = 30;
+  updateTimerDisplay();
+  questionTimer = setInterval(() => {
+    timeLeft--;
+    updateTimerDisplay();
+    if (timeLeft <= 0) {
+      clearQuestionTimer();
+      if (!isAnswering) {
+        // time up, treat as wrong
+        let wrongIdx = currentQuestion.ans === 0 ? 1 : 0;
+        answer(wrongIdx);
+      }
+    }
+  }, 1000);
 }
 
 // ==================== VICTORY ====================
