@@ -20,6 +20,8 @@ body {
 header { text-align: center; margin-bottom: 18px; }
 header h1 { font-size: 2.6em; color: #ffd700; text-shadow: 0 0 30px #ff8c00; letter-spacing: 2px; }
 header .sub { color: #99ccff; font-size: 1.05em; margin-top: 4px; }
+header .back { color: #99ccff; font-size: 0.85em; text-decoration: none; display: inline-block; margin-top: 10px; padding: 5px 14px; border: 1px solid #3a4a7a; border-radius: 20px; background: rgba(255,255,255,0.03); transition: all .2s; }
+header .back:hover { background: rgba(153,204,255,0.1); border-color: #99ccff; }
 
 .controls { display: flex; justify-content: center; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 26px; }
 .controls select {
@@ -78,6 +80,7 @@ header .sub { color: #99ccff; font-size: 1.05em; margin-top: 4px; }
   <header>
     <h1>🏆 太空冒險 排行榜</h1>
     <div class="sub">四年級科學科 · 邊個係星際指揮官？</div>
+    <a href="index.html" class="back">← 返回遊戲 / 主頁</a>
   </header>
 
   <div class="controls">
@@ -131,6 +134,7 @@ let bestList = [];
 window.bestList = bestList;
 </script>
 
+<script>
 function buildClassFilter() {
   const sel = document.getElementById('classFilter');
   const cur = sel.value;
@@ -143,15 +147,15 @@ function buildClassFilter() {
 
 function render() {
   const cls = document.getElementById('classFilter').value;
-  const list = window.bestList || [];
-  const rows = list.filter(r => !cls || r.class === cls);
+  const dataList = window.bestList || [];
+  const rows = dataList.filter(r => !cls || r.class === cls);
   const medals = ['🥇', '🥈', '🥉'];
   const podium = document.getElementById('podium');
-  const list = document.getElementById('list');
+  const listEl = document.getElementById('list');
 
   if (rows.length === 0) {
     podium.innerHTML = '';
-    list.innerHTML = '<div class="empty">🚀 仲未有人玩…快啲開始第一個挑戰！</div>';
+    listEl.innerHTML = '<div class="empty">🚀 仲未有人玩…快啲開始第一個挑戰！</div>';
     document.getElementById('count').textContent = '';
     return;
   }
@@ -168,7 +172,7 @@ function render() {
     </div>`).join('');
 
   // 第 4 名之後
-  list.innerHTML = rows.slice(3, 20).map((e, i) => `
+  listEl.innerHTML = rows.slice(3, 20).map((e, i) => `
     <div class="row">
       <span class="pos">${i + 4}</span>
       <span class="who">${e.class} 班 ${e.num} 號 <span class="stat">答對 ${e.correct} 題</span></span>
@@ -182,7 +186,7 @@ function render() {
 // stars
 (function () {
   const c = document.getElementById('stars');
-  for (let i = 0; i < 90; i++) {
+  for (let i = 90; i--; ) {
     const s = document.createElement('div');
     s.className = 'star';
     const sz = 1 + Math.random() * 2.5;
