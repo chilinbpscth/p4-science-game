@@ -729,7 +729,7 @@ async function saveScore(result, grade) {
   } catch (err) {
     console.error('記錄成績失敗：', err);
     el.className = 'save-status error';
-    el.textContent = '⚠️ 成績記錄失敗（可截圖給老師）';
+    el.textContent = `⚠️ 成績記錄失敗: ${err.message || err} （可截圖給老師）`;
   }
 }
 
