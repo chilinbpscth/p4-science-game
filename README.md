@@ -137,6 +137,40 @@ A: 喺 `game.html` 搵 `const CLASSES = ['4A', '4B'...]` 改
 
 ---
 
+## 🛠️ 開發模式（npm + Vite + 現代 Firebase SDK）
+
+因為你選擇咗「使用 npm」，我已經幫你：
+
+- `npm install firebase`
+- `npm install -D vite`
+- 建立 `vite.config.js`（支援多頁）
+- 抽取咗 `js/firebase.js` 用現代 modular API
+- 更新咗三個 HTML 檔案用 `import` + Vite
+
+### 啟動開發伺服器（推薦）
+
+```bash
+npm run dev
+```
+
+Vite 會自動開瀏覽器，支援 hot reload，Firebase import 會正確 resolve。
+
+### 構建生產版
+
+```bash
+npm run build
+```
+
+輸出會喺 `dist/` 資料夾，然後可以用任何 static hosting（GitHub Pages, Netlify 等）。
+
+### 注意
+
+- 直接雙擊 `index.html` 而家**唔會正常運作**（因為用咗 ES module + bare import）。
+- 一定要用 `npm run dev` 嚟開發/測試。
+- 學生最終玩遊戲時，可以用 build 後嘅 `dist/` 檔案，或者你繼續 maintain 一個純 CDN 版本。
+
+---
+
 ## 📞 仲有問題？
 
 有任何設定問題，歡迎再問我，我可以一步一步幫你 debug。

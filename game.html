@@ -303,33 +303,10 @@ select.login-input option { background: #0d1030; }
   </div>
 </div>
 
-<!-- ====== FIREBASE SDK ====== -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script>
-// ╔══════════════════════════════════════════════════════════════╗
-// ║  ⚙️ Firebase 設定 — 將你 Firebase 專案嘅 config 貼喺呢度       ║
-// ║  詳細步驟請睇專案入面嘅 README.md（超簡單 5 分鐘）            ║
-// ╚══════════════════════════════════════════════════════════════╝
-const firebaseConfig = {
-  apiKey: "貼上你嘅_API_KEY",
-  authDomain: "你嘅專案.firebaseapp.com",
-  projectId: "你嘅專案ID",
-  storageBucket: "你嘅專案.appspot.com",
-  messagingSenderId: "貼上你嘅",
-  appId: "貼上你嘅"
-};
-
-let db = null;
-try {
-  // 只要 config 仲未填，就唔會連線，遊戲照玩，只係唔記錄成績
-  if (!firebaseConfig.projectId.startsWith("你嘅")) {
-    firebase.initializeApp(firebaseConfig);
-    db = firebase.firestore();
-  }
-} catch (e) {
-  console.warn("Firebase 未設定好，成績將唔會記錄：", e);
-}
+<!-- ====== FIREBASE SDK (modular via npm + Vite) ====== -->
+<script type="module">
+  import { getDB, saveScore, getAllScores } from './js/firebase.js';
+  window.fb = { getDB, saveScore, getAllScores };
 </script>
 
 <script>
@@ -661,12 +638,13 @@ function gameOver() {
 }
 
 // ==================== SAVE SCORE TO FIREBASE ====================
-function saveScore(result, grade) {
+async function saveScore(result, grade) {
   const el = document.getElementById('saveStatus');
   if (scoreSaved) return;        // 同一局只記錄一次
   scoreSaved = true;
 
-  if (!db) {
+  const fb = window.fb;
+  if (!fb || !fb.getDB()) {
     el.className = 'save-status';
     el.textContent = '';         // Firebase 未設定，唔顯示任何嘢，遊戲照常
     return;
@@ -675,46 +653,46 @@ function saveScore(result, grade) {
   el.className = 'save-status saving';
   el.textContent = '💾 正在記錄成績…';
 
-  db.collection('scores').add({
-    name: studentName,
-    class: studentClass,
-    num: studentNum || '',
-    score: score,
-    correct: totalCorrect,
-    wrong: totalWrong,
-    maxCombo: maxCombo,
-    result: result,                       // 'win' 或 'lose'
-    reached: planets[currentPlanet].name,  // 到達邊個星球
-    grade: grade || '',
-    fuelLeft: fuel,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  })
-  .then(() => {
+  try {
+    await fb.saveScore({
+      name: studentName,
+      class: studentClass,
+      num: studentNum || '',
+      score: score,
+      correct: totalCorrect,
+      wrong: totalWrong,
+      maxCombo: maxCombo,
+      result: result,
+      reached: planets[currentPlanet].name,
+      grade: grade || '',
+      fuelLeft: fuel
+    });
     el.className = 'save-status';
     el.textContent = '✅ 成績已記錄！';
     loadLeaderboard();
-  })
-  .catch((err) => {
+  } catch (err) {
     console.error('記錄成績失敗：', err);
     el.className = 'save-status error';
     el.textContent = '⚠️ 成績記錄失敗（可截圖比老師）';
-  });
+  }
 }
 
 // ==================== LEADERBOARD（排行榜）====================
 // 用「每位學生嘅最高分」排名，唔會畀一個人狂玩洗版
-function loadLeaderboard() {
+async function loadLeaderboard() {
   const box = document.getElementById('leaderboard');
-  if (!db) { box.style.display = 'none'; return; }
+  const fb = window.fb;
+  if (!fb || !fb.getDB()) { box.style.display = 'none'; return; }
 
   box.style.display = 'block';
   box.innerHTML = '<div class="lb-loading">🏆 載入排行榜…</div>';
 
-  db.collection('scores').get().then(snap => {
+  try {
+    const scores = await fb.getAllScores();
+
     // 計每位學生（班別+學號）嘅最高分
     const best = {};
-    snap.forEach(doc => {
-      const d = doc.data();
+    scores.forEach(d => {
       const key = (d.class || '') + '|' + (d.num || '');
       const t = (d.createdAt && d.createdAt.toDate) ? d.createdAt.toDate().getTime() : 0;
       if (!best[key] || (d.score || 0) > best[key].score) {
@@ -756,10 +734,10 @@ function loadLeaderboard() {
     }
 
     box.innerHTML = html;
-  }).catch(err => {
+  } catch (err) {
     console.error('排行榜載入失敗：', err);
     box.style.display = 'none';
-  });
+  }
 }
 
 // ==================== STARS ====================

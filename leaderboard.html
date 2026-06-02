@@ -93,67 +93,49 @@ header .sub { color: #99ccff; font-size: 1.05em; margin-top: 4px; }
   <div class="count" id="count"></div>
 </div>
 
-<!-- ====== FIREBASE SDK ====== -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script>
-// ╔══════════════════════════════════════════════════════════════╗
-// ║  ⚙️ 同遊戲檔案用「一模一樣」嘅 Firebase config，貼喺呢度        ║
-// ║  詳細步驟請睇專案入面嘅 README.md                             ║
-// ╚══════════════════════════════════════════════════════════════╝
-const firebaseConfig = {
-  apiKey: "貼上你嘅_API_KEY",
-  authDomain: "你嘅專案.firebaseapp.com",
-  projectId: "你嘅專案ID",
-  storageBucket: "你嘅專案.appspot.com",
-  messagingSenderId: "貼上你嘅",
-  appId: "貼上你嘅"
-};
+<!-- ====== FIREBASE SDK (modular via npm + Vite) ====== -->
+<script type="module">
+  import { subscribeScores } from './js/firebase.js';
 
-let bestList = [];   // 每位學生最高分
-
-// 未設定 Firebase 就顯示友善提示，唔好爆錯誤
-if (firebaseConfig.projectId.startsWith('你嘅')) {
-  document.getElementById('podium').innerHTML = '';
-  document.getElementById('list').innerHTML =
-    '<div class="empty">⚙️ 排行榜未啟用<br><span style="font-size:0.7em;color:#6677aa">老師仲未設定好 Firebase（見 README.md）</span></div>';
-  throw new Error('Firebase 未設定');  // 停止往下行
-}
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-// 即時監聽：任何學生玩完，排行榜即刻更新
-db.collection('scores').onSnapshot(snap => {
-  const best = {};
-  snap.forEach(doc => {
-    const d = doc.data();
-    const key = (d.class || '') + '|' + (d.num || '');
-    const t = (d.createdAt && d.createdAt.toDate) ? d.createdAt.toDate().getTime() : 0;
-    if (!best[key] || (d.score || 0) > best[key].score) {
-      best[key] = {
-        key, class: d.class, num: d.num,
-        score: d.score || 0, correct: d.correct || 0, t
-      };
+  // 即時監聽（使用新版 modular API）
+  const unsubscribe = subscribeScores((scores) => {
+    const best = {};
+    scores.forEach(d => {
+      const key = (d.class || '') + '|' + (d.num || '');
+      const t = (d.createdAt && d.createdAt.toDate) ? d.createdAt.toDate().getTime() : 0;
+      if (!best[key] || (d.score || 0) > best[key].score) {
+        best[key] = {
+          key, class: d.class, num: d.num,
+          score: d.score || 0, correct: d.correct || 0, t
+        };
+      }
+    });
+    window.bestList = Object.values(best).sort((a, b) => b.score - a.score || a.t - b.t);
+    buildClassFilter();
+    render();
+    const now = new Date();
+    const p = n => String(n).padStart(2, '0');
+    const updatedEl = document.getElementById('updated');
+    if (updatedEl) {
+      updatedEl.textContent =
+        `更新於 ${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
     }
   });
-  bestList = Object.values(best).sort((a, b) => b.score - a.score || a.t - b.t);
-  buildClassFilter();
-  render();
-  const now = new Date();
-  const p = n => String(n).padStart(2, '0');
-  document.getElementById('updated').textContent =
-    `更新於 ${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
-}, err => {
-  console.error(err);
-  document.getElementById('list').innerHTML =
-    '<div class="empty">⚠️ 讀取失敗：' + err.message + '<br>請檢查 Firebase 設定同安全規則（allow read 要 true）。</div>';
-});
+
+  window.addEventListener('beforeunload', () => unsubscribe && unsubscribe());
+</script>
+
+<script>
+// Global for the render functions below (updated by the module above)
+let bestList = [];
+window.bestList = bestList;
+</script>
 
 function buildClassFilter() {
   const sel = document.getElementById('classFilter');
   const cur = sel.value;
-  const classes = [...new Set(bestList.map(r => r.class).filter(Boolean))].sort();
+  const list = window.bestList || [];
+  const classes = [...new Set(list.map(r => r.class).filter(Boolean))].sort();
   sel.innerHTML = '<option value="">🌍 全校</option>' +
     classes.map(c => `<option value="${c}">${c} 班</option>`).join('');
   sel.value = cur;
@@ -161,7 +143,8 @@ function buildClassFilter() {
 
 function render() {
   const cls = document.getElementById('classFilter').value;
-  const rows = bestList.filter(r => !cls || r.class === cls);
+  const list = window.bestList || [];
+  const rows = list.filter(r => !cls || r.class === cls);
   const medals = ['🥇', '🥈', '🥉'];
   const podium = document.getElementById('podium');
   const list = document.getElementById('list');

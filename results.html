@@ -61,55 +61,37 @@ tr:hover td { background: #1a1f44; }
 
 <div id="tableWrap"><div class="msg">載入中…</div></div>
 
-<!-- ====== FIREBASE SDK ====== -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script>
-// ╔══════════════════════════════════════════════════════════════╗
-// ║  ⚙️ 同遊戲檔案用「一模一樣」嘅 Firebase config，貼喺呢度        ║
-// ║  詳細步驟請睇專案入面嘅 README.md                             ║
-// ╚══════════════════════════════════════════════════════════════╝
-const firebaseConfig = {
-  apiKey: "貼上你嘅_API_KEY",
-  authDomain: "你嘅專案.firebaseapp.com",
-  projectId: "你嘅專案ID",
-  storageBucket: "你嘅專案.appspot.com",
-  messagingSenderId: "貼上你嘅",
-  appId: "貼上你嘅"
-};
+<!-- ====== FIREBASE SDK (modular via npm + Vite) ====== -->
+<script type="module">
+  import { getAllScores } from './js/firebase.js';
+  window.fbResults = { getAllScores };
+</script>
 
-let db = null;
+<script>
 let allRows = [];
 
-if (!firebaseConfig.projectId.startsWith('你嘅')) {
-  firebase.initializeApp(firebaseConfig);
-  db = firebase.firestore();
-}
-
-function loadData() {
-  if (!db) {
+async function loadData() {
+  const fb = window.fbResults;
+  if (!fb || !fb.getAllScores) {
     document.getElementById('tableWrap').innerHTML =
       '<div class="msg">⚙️ 仲未設定 Firebase。<br>請跟 README.md 嘅步驟貼入 config，先會見到成績。</div>';
     return;
   }
   document.getElementById('tableWrap').innerHTML = '<div class="msg">載入中…</div>';
-  db.collection('scores').orderBy('createdAt', 'desc').get()
-    .then(snap => {
-      allRows = [];
-      snap.forEach(doc => {
-        const d = doc.data();
-        d._id = doc.id;
-        d._time = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate() : null;
-        allRows.push(d);
-      });
-      buildClassFilter();
-      render();
-    })
-    .catch(err => {
-      console.error(err);
-      document.getElementById('tableWrap').innerHTML =
-        '<div class="msg">⚠️ 讀取失敗：' + err.message + '<br>請檢查 Firebase config 同 Firestore 規則。</div>';
+  try {
+    const scores = await fb.getAllScores();
+    allRows = scores.map(d => {
+      d._id = d.id;
+      d._time = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate() : null;
+      return d;
     });
+    buildClassFilter();
+    render();
+  } catch (err) {
+    console.error(err);
+    document.getElementById('tableWrap').innerHTML =
+      '<div class="msg">⚠️ 讀取失敗：' + err.message + '<br>請檢查 Firebase config 同 Firestore 規則。</div>';
+  }
 }
 
 function buildClassFilter() {
