@@ -21,3 +21,6 @@ Thumbs.db
 # Build output (if we add bundler later)
 dist/
 build/
+
+# Firebase
+.firebase/
