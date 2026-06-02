@@ -5,33 +5,40 @@
 - `leaderboard.html` 公開大屏排行榜
 - `results.html` 老師專用詳細成績表
 
+**注意**：而家 project 已經轉用 **Vite + npm Firebase modular SDK**（因為你喺 console 揀咗「使用 npm」）。Config 已經喺 `js/firebase.js` 入面用你嘅真實值 set 好。
+
 ---
 
-## 📋 設定步驟（5 分鐘搞掂）
+## 📋 設定步驟（Firestore 部分）
 
-### 1. 建立 Firebase 專案
+### 1. 建立 Firebase 專案（如果你未做）
 
 1. 打開 [Firebase Console](https://console.firebase.google.com/)
 2. 點擊右上角 **「新增專案」**
-3. 專案名稱建議用：`p4-science-game` 或 `p4-太空冒險`
-4. **關閉** Google Analytics（唔使）
-5. 點擊「建立專案」
+3. 專案名稱建議用：`p4scigame` （或你用嘅）
+4. 點擊「建立專案」
 
-### 2. 新增 Web 應用程式
+### 2. 新增 Web 應用程式（Config 已經 copy 好）
 
-1. 進入專案後，喺中間點擊 **Web 圖示 `</>`**
-2. 應用程式暱稱填：`P4 太空冒險`
-3. 打勾「也為這個應用程式設定 Firebase Hosting」（可選）
-4. 點擊「註冊應用程式」
-5. **複製** 畫面顯示嘅 `firebaseConfig` 整個物件（之後要用）
+Config 已經從你之前嘅 screenshot 放咗入 `js/firebase.js`：
 
-### 3. 啟用 Firestore 資料庫
+```js
+const firebaseConfig = {
+  apiKey: "AIzaSyDqMA3nVUyTFywuRMv43NXvNasMiiJRJ-A",
+  authDomain: "p4scigame.firebaseapp.com",
+  projectId: "p4scigame",
+  storageBucket: "p4scigame.firebasestorage.app",
+  messagingSenderId: "937770158737",
+  appId: "1:937770158737:web:1165453f5beba9d0fc0d30"
+};
+```
+
+### 3. 啟用 Firestore 資料庫（最重要）
 
 1. 左邊選單展開 **Build** → 點擊 **Firestore Database**
 2. 點擊 **「建立資料庫」**
 3. 選擇 **「開始於測試模式」**（之後會改規則）
-4. 選擇地區：
-   - 推薦 `asia-east2`（香港）或 `asia-southeast1`
+4. 選擇地區：推薦 `asia-east2`（香港）
 5. 點擊「啟用」
 
 ### 4. 設定 Firestore 安全規則（好重要！）
@@ -61,42 +68,103 @@ service cloud.firestore {
 
 > ⚠️ 如果之後想加強保安（例如只限特定網域），可以再改。
 
-### 5. 把 Config 貼入三個 HTML 檔案
+---
 
-喺你下載/克隆嘅資料夾，有三個檔案都要貼**一樣**嘅 config：
+## 🛠️ 開發同測試
 
-- `game.html` （學生玩遊戲時儲分用）
-- `leaderboard.html` （公開排行榜）
-- `results.html` （老師查看詳細成績）
+因為用 Vite + modular：
 
-**操作方法**：
-1. 用文字編輯器打開每個檔案
-2. 搵到 `const firebaseConfig = { ... }` 呢一段
-3. 將你喺 Firebase 複製嘅 config **完整取代** 佢
-
-範例（取代後應該係咁）：
-
-```js
-const firebaseConfig = {
-  apiKey: "AIzaSyCxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-  authDomain: "p4-science-game.firebaseapp.com",
-  projectId: "p4-science-game",
-  storageBucket: "p4-science-game.appspot.com",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abcdef1234567890"
-};
+```bash
+npm run dev
 ```
 
-**三個檔案都要改！** 改完儲存。
+Vite 會自動開瀏覽器，支援 hot reload。
 
-### 6. 測試
-
-1. 喺瀏覽器打開 `index.html`
-2. 玩一兩關，完成後應該會見到「✅ 成績已記錄！」
-3. 打開 `leaderboard.html` 應該見到你嘅成績
-4. 打開 `results.html` 應該見到詳細表格
+**直接雙擊 index.html 唔 work**，一定要用 `npm run dev`。
 
 ---
+
+## 🚀 放喺 Firebase Hosting 托管（你而家問嘅）
+
+係！可以托管喺 Firebase Hosting。
+
+我已經幫你準備好：
+
+- `firebase.json` （public: "dist"）
+- `.firebaserc` （project: p4scigame）
+- `package.json` 有 `"deploy": "npm run build && firebase deploy"`
+
+### 步驟：
+
+1. **Login Firebase CLI**（第一次要做）：
+
+```bash
+export PATH="/opt/homebrew/bin:$PATH"
+firebase login
+```
+
+   會開瀏覽器登入你嘅 Google 帳戶。
+
+2. **Build 同 Deploy**：
+
+```bash
+npm run deploy
+```
+
+   呢個會自動 `npm run build` 然後 `firebase deploy`。
+
+第一次 deploy 可能要確認，之後就簡單。
+
+部署後，你會得到一個 URL 如 `https://p4scigame.web.app` ，學生可以直接用瀏覽器開，唔使裝嘢。
+
+---
+
+## 📁 檔案用途說明
+
+| 檔案              | 用途                     | 建議用法                     |
+|-------------------|--------------------------|------------------------------|
+| `index.html`      | 遊戲主頁 + 登入          | 畀學生玩（經 Vite dev 或 build） |
+| `game.html`       | 實際遊戲                 | 由 index.html 跳轉           |
+| `leaderboard.html`| 公開即時排行榜           | 放喺班房大電視 / 投影機      |
+| `results.html`    | 老師專用詳細成績表       | **只畀老師自己用**，建議用密碼保護或放內網 |
+
+---
+
+## 🔒 安全建議
+
+- `results.html` 包含所有學生成績，**唔好**公開上網俾任何人見到。
+  - Hosting 後可以用 Firebase Auth 或簡單 password 保護（可再問我加）。
+- Firestore 規則而家係「任何人可寫可讀」，適合小規模班用。
+
+---
+
+## ❓ 常見問題
+
+**Q: 玩完冇儲到分？**  
+A: 檢查：
+1. Firestore Database 是否已建立
+2. Rules 是否已 Publish（去 Rules 頁睇有冇紅色錯誤）
+3. 用 `npm run dev` 開（唔好直接開 html）
+
+**Q: 排行榜顯示唔到？**  
+A: 檢查 rules 入面 `allow read: if true;` 有冇
+
+**Q: 想清空測試數據？**  
+A: 去 Firebase Console → Firestore → 選 collection `scores` → 刪除文件
+
+**Q: 想改班別列表？**  
+A: 喺 `game.html` 搵 `const CLASSES = ['4A', '4B'...]` 改
+
+**Q: 部署後點樣 update？**  
+A: 改完 code → `npm run deploy`
+
+---
+
+## 📞 仲有問題？
+
+有任何設定問題，歡迎再問我，我可以一步一步幫你 debug。
+
+設定好之後記住 **git push** 更新你嘅 GitHub repo！
 
 ## 📁 檔案用途說明
 
