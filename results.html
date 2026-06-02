@@ -192,7 +192,8 @@ function exportCSV() {
   URL.revokeObjectURL(url);
 }
 
-loadData();
+// delay to ensure the module script has set window.fbResults
+setTimeout(loadData, 100);
 </script>
 </body>
 </html>
