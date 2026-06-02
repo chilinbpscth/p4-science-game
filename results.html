@@ -67,6 +67,7 @@ tr:hover td { background: #1a1f44; }
 <script>
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  ⚙️ 同遊戲檔案用「一模一樣」嘅 Firebase config，貼喺呢度        ║
+// ║  詳細步驟請睇專案入面嘅 README.md                             ║
 // ╚══════════════════════════════════════════════════════════════╝
 const firebaseConfig = {
   apiKey: "貼上你嘅_API_KEY",
@@ -88,7 +89,7 @@ if (!firebaseConfig.projectId.startsWith('你嘅')) {
 function loadData() {
   if (!db) {
     document.getElementById('tableWrap').innerHTML =
-      '<div class="msg">⚙️ 仲未設定 Firebase。<br>請跟「Firebase設定說明」貼入 config，先會見到成績。</div>';
+      '<div class="msg">⚙️ 仲未設定 Firebase。<br>請跟 README.md 嘅步驟貼入 config，先會見到成績。</div>';
     return;
   }
   document.getElementById('tableWrap').innerHTML = '<div class="msg">載入中…</div>';

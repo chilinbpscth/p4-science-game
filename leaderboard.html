@@ -99,6 +99,7 @@ header .sub { color: #99ccff; font-size: 1.05em; margin-top: 4px; }
 <script>
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  ⚙️ 同遊戲檔案用「一模一樣」嘅 Firebase config，貼喺呢度        ║
+// ║  詳細步驟請睇專案入面嘅 README.md                             ║
 // ╚══════════════════════════════════════════════════════════════╝
 const firebaseConfig = {
   apiKey: "貼上你嘅_API_KEY",
@@ -115,7 +116,7 @@ let bestList = [];   // 每位學生最高分
 if (firebaseConfig.projectId.startsWith('你嘅')) {
   document.getElementById('podium').innerHTML = '';
   document.getElementById('list').innerHTML =
-    '<div class="empty">⚙️ 排行榜未啟用<br><span style="font-size:0.7em;color:#6677aa">老師仲未設定好 Firebase（見「Firebase設定說明」）</span></div>';
+    '<div class="empty">⚙️ 排行榜未啟用<br><span style="font-size:0.7em;color:#6677aa">老師仲未設定好 Firebase（見 README.md）</span></div>';
   throw new Error('Firebase 未設定');  // 停止往下行
 }
 
