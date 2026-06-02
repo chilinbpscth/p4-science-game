@@ -74,7 +74,7 @@ async function loadData() {
   const fb = window.fbResults;
   if (!fb || !fb.getAllScores) {
     document.getElementById('tableWrap').innerHTML =
-      '<div class="msg">⚙️ 仲未設定 Firebase。<br>請跟 README.md 嘅步驟貼入 config，先會見到成績。</div>';
+      '<div class="msg">⚙️ 仲未設定 Firebase。<br>請跟 README.md 的步驟貼入 config，先會見到成績。</div>';
     return;
   }
   document.getElementById('tableWrap').innerHTML = '<div class="msg">載入中…</div>';

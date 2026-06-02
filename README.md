@@ -5,7 +5,7 @@
 - `leaderboard.html` 公開大屏排行榜
 - `results.html` 老師專用詳細成績表
 
-**注意**：而家 project 已經轉用 **Vite + npm Firebase modular SDK**（因為你喺 console 揀咗「使用 npm」）。Config 已經喺 `js/firebase.js` 入面用你嘅真實值 set 好。
+**注意**：現在 project 已經轉用 **Vite + npm Firebase modular SDK**（因為你喺 console 選擇了「使用 npm」）。Config 已經喺 `js/firebase.js` 入面用你的真實值 set 好。
 
 ---
 
@@ -15,12 +15,12 @@
 
 1. 打開 [Firebase Console](https://console.firebase.google.com/)
 2. 點擊右上角 **「新增專案」**
-3. 專案名稱建議用：`p4scigame` （或你用嘅）
+3. 專案名稱建議用：`p4scigame` （或你用的）
 4. 點擊「建立專案」
 
 ### 2. 新增 Web 應用程式（Config 已經 copy 好）
 
-Config 已經從你之前嘅 screenshot 放咗入 `js/firebase.js`：
+Config 已經從你之前的 screenshot 放了入 `js/firebase.js`：
 
 ```js
 const firebaseConfig = {
@@ -80,11 +80,11 @@ npm run dev
 
 Vite 會自動開瀏覽器，支援 hot reload。
 
-**直接雙擊 index.html 唔 work**，一定要用 `npm run dev`。
+**直接雙擊 index.html 不 work**，一定要用 `npm run dev`。
 
 ---
 
-## 🚀 放喺 Firebase Hosting 托管（你而家問嘅）
+## 🚀 放喺 Firebase Hosting 托管（你現在問的）
 
 係！可以托管喺 Firebase Hosting。
 
@@ -103,7 +103,7 @@ export PATH="/opt/homebrew/bin:$PATH"
 firebase login
 ```
 
-   會開瀏覽器登入你嘅 Google 帳戶。
+   會開瀏覽器登入你的 Google 帳戶。
 
 2. **Build 同 Deploy**：
 
@@ -115,7 +115,7 @@ npm run deploy
 
 第一次 deploy 可能要確認，之後就簡單。
 
-部署後，你會得到一個 URL 如 `https://p4scigame.web.app` ，學生可以直接用瀏覽器開，唔使裝嘢。
+部署後，你會得到一個 URL 如 `https://p4scigame.web.app` ，學生可以直接用瀏覽器開，不使裝嘢。
 
 ---
 
@@ -132,22 +132,22 @@ npm run deploy
 
 ## 🔒 安全建議
 
-- `results.html` 包含所有學生成績，**唔好**公開上網俾任何人見到。
+- `results.html` 包含所有學生成績，**不好**公開上網俾任何人見到。
   - Hosting 後可以用 Firebase Auth 或簡單 password 保護（可再問我加）。
-- Firestore 規則而家係「任何人可寫可讀」，適合小規模班用。
+- Firestore 規則現在係「任何人可寫可讀」，適合小規模班用。
 
 ---
 
 ## ❓ 常見問題
 
-**Q: 玩完冇儲到分？**  
+**Q: 玩完沒有儲到分？**  
 A: 檢查：
 1. Firestore Database 是否已建立
-2. Rules 是否已 Publish（去 Rules 頁睇有冇紅色錯誤）
-3. 用 `npm run dev` 開（唔好直接開 html）
+2. Rules 是否已 Publish（去 Rules 頁睇有沒有紅色錯誤）
+3. 用 `npm run dev` 開（不好直接開 html）
 
-**Q: 排行榜顯示唔到？**  
-A: 檢查 rules 入面 `allow read: if true;` 有冇
+**Q: 排行榜顯示不到？**  
+A: 檢查 rules 入面 `allow read: if true;` 有沒有
 
 **Q: 想清空測試數據？**  
 A: 去 Firebase Console → Firestore → 選 collection `scores` → 刪除文件
@@ -164,7 +164,7 @@ A: 改完 code → `npm run deploy`
 
 有任何設定問題，歡迎再問我，我可以一步一步幫你 debug。
 
-設定好之後記住 **git push** 更新你嘅 GitHub repo！
+設定好之後記住 **git push** 更新你的 GitHub repo！
 
 ## 📁 檔案用途說明
 
@@ -179,23 +179,23 @@ A: 改完 code → `npm run deploy`
 
 ## 🔒 安全建議
 
-- `results.html` 包含所有學生成績，**唔好**公開上網俾任何人見到。
+- `results.html` 包含所有學生成績，**不好**公開上網俾任何人見到。
   - 可以用 GitHub Pages 時只 deploy 其他檔案
   - 或加簡單密碼保護（可再問我加功能）
-- Firestore 規則而家係「任何人可寫可讀」，適合小規模班用。如果想限制只限你網站，可以加 `request.resource.data` 驗證或改用 Authentication。
+- Firestore 規則現在係「任何人可寫可讀」，適合小規模班用。如果想限制只限你網站，可以加 `request.resource.data` 驗證或改用 Authentication。
 
 ---
 
 ## ❓ 常見問題
 
-**Q: 玩完冇儲到分？**  
+**Q: 玩完沒有儲到分？**  
 A: 檢查三樣嘢：
-1. 三個 HTML 檔案嘅 firebaseConfig 是否正確貼上
+1. 三個 HTML 檔案的 firebaseConfig 是否正確貼上
 2. Firestore 是否已建立
-3. Rules 是否已 Publish（有冇紅色錯誤）
+3. Rules 是否已 Publish（有沒有紅色錯誤）
 
-**Q: 排行榜顯示唔到？**  
-A: 檢查 rules 入面 `allow read: if true;` 有冇
+**Q: 排行榜顯示不到？**  
+A: 檢查 rules 入面 `allow read: if true;` 有沒有
 
 **Q: 想清空測試數據？**  
 A: 去 Firebase Console → Firestore → 選 collection `scores` → 刪除文件
@@ -207,13 +207,13 @@ A: 喺 `game.html` 搵 `const CLASSES = ['4A', '4B'...]` 改
 
 ## 🛠️ 開發模式（npm + Vite + 現代 Firebase SDK）
 
-因為你選擇咗「使用 npm」，我已經幫你：
+因為你選擇了「使用 npm」，我已經幫你：
 
 - `npm install firebase`
 - `npm install -D vite`
 - 建立 `vite.config.js`（支援多頁）
-- 抽取咗 `js/firebase.js` 用現代 modular API
-- 更新咗三個 HTML 檔案用 `import` + Vite
+- 抽取了 `js/firebase.js` 用現代 modular API
+- 更新了三個 HTML 檔案用 `import` + Vite
 
 ### 啟動開發伺服器（推薦）
 
@@ -233,9 +233,9 @@ npm run build
 
 ### 注意
 
-- 直接雙擊 `index.html` 而家**唔會正常運作**（因為用咗 ES module + bare import）。
+- 直接雙擊 `index.html` 現在**不會正常運作**（因為用了 ES module + bare import）。
 - 一定要用 `npm run dev` 嚟開發/測試。
-- 學生最終玩遊戲時，可以用 build 後嘅 `dist/` 檔案，或者你繼續 maintain 一個純 CDN 版本。
+- 學生最終玩遊戲時，可以用 build 後的 `dist/` 檔案，或者你繼續 maintain 一個純 CDN 版本。
 
 ---
 
@@ -243,4 +243,4 @@ npm run build
 
 有任何設定問題，歡迎再問我，我可以一步一步幫你 debug。
 
-設定好之後記住 **git push** 更新你嘅 GitHub repo！
+設定好之後記住 **git push** 更新你的 GitHub repo！
